@@ -11,7 +11,7 @@ hero:
   actions:
     - theme: brand
       text: Check Now!
-      link: /
+      link: /introduction
 
 features:
   # - title: "Esbuild: 高性能的JS Bundler"

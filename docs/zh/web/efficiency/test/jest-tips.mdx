@@ -1,0 +1,199 @@
+## Jest-TS 单元测试总结
+
+#### 如何处理待测函数中需要的Promise对象
+
+``` ts
+// classA.ts
+export class A {
+  promise: any;
+  success: Function;
+  failed: Function;
+  constructor(promise) {
+    this.promise = promise;
+    this.success = () => {};
+    this.failed = () => {};
+    this.promise.then((data) => {
+      this.success(data);
+    }).catch((err) => {
+      this.failed(err);
+    });
+  }
+```
+
+``` ts
+// classA-test.ts
+import { A } from '../src/classA';
+
+const mockFunc1 = new Promise((resolve) => { // then
+  resolve('success');
+});
+const mockFunc2 = Promise.reject({ catch: jest.fn() }); // catch
+const a = new A(mockFunc1);
+// Const a = new A(mockFunc2);
+... ...
+```
+
+#### 如何局部mock待测模块中引入的其他文件export的变量
+
+``` ts
+// variable.ts
+export let variable1: Type1;
+```
+
+``` ts
+// test-test.ts
+jest.mock('../src/variable', () => ({
+  // 保留其他原始实现
+  // ...(jest.requireActual('../src/variable')) as any,
+  variable1: {
+    property1: 'anything you want.',
+	func1: jest.fn(),
+  },
+}));
+... ...
+```
+
+#### 如何处理待测函数中的匿名函数
+
+``` ts
+// httpAPI.ts
+export const httpAPI: any = {};
+httpAPI.post = (param, callback: Function) => {
+  networkAPI.post(param, (ok, res) => {
+    if (ok) {
+      callback(ok, res);
+    }
+  });
+};
+```
+
+``` ts
+// httpAPI-test.ts
+import { httpAPI } from '../src/httpAPI';
+
+const NetworkAPIMock = {
+  post: jest.fn((options: HttpPostRequestOptions, callback: HttpResponse): void => { return undefined; }),
+};
+test('post', () => {
+  const mockCallBack = jest.fn();
+  httpAPI.post(params, mockCallBack);
+  expect(NetworkAPIMock.post).toBeCalledWith(params, expect.any(Function));
+});
+```
+
+#### 在测试Class时，类函数调用另一个类函数如何处理
+> 若被调用的为 *private Function*， 见问题 [如何mock-private-function](#如何mock-private-function)
+
+``` ts
+// classA.ts
+export class A {
+  func1() {
+    this.func2();
+  }
+
+  func2() {
+    // something todo
+  }
+};
+```
+
+``` ts
+// classA-test.ts
+import { A } from '../src/classA';
+
+let a = new A();
+test('func1', () => {
+  const spyFunc2 = jest.spyOn(a, 'func2');
+  a.func1();
+  expect(spyFunc2).toHaveBeenCalled();
+});
+```
+
+#### 匹配console.log结果
+
+``` ts
+console.log = jest.fn();
+... ...
+expect(console.log).toHaveBeenCalledWith('the correct text');
+```
+
+#### 如何mock setTimeout
+
+``` ts
+jest.useFakeTimers();
+jest.runAllTimers();
+jest.useRealTimers();
+```
+
+#### 如何mock Class
+
+``` ts
+// classA.ts
+export class A {
+  constructor(private b: B) {}
+}
+```
+
+``` ts
+// classB.ts
+export class B {
+... ...
+}
+```
+
+``` ts
+// classA-test.ts
+import { A } from '../src/classA';
+import { B } from '../src/classB';
+
+jest.mock('../src/classB');
+const b = new B();
+const a = new A(b);
+```
+
+#### 如何mock interface
+
+``` ts
+// interfaceA.ts
+export interface A {
+  func1: (type: string) => number
+  func2: (name: string) => string
+}
+```
+
+``` ts
+// xxx-test.ts
+import { A } from '../src/interfaceA';
+
+const mockInterfaceA = jest.fn<A, []>(() => ({
+  func1: jest.fn((type: string): number => 0),
+  func2: jest.fn((name: string): string => ''),
+}));
+```
+
+#### 如何mock private Function
+
+``` ts
+// classA.ts
+export class A {
+  func1() {
+    this.func2();
+  }
+
+  private func2() {
+    // something todo
+  }
+};
+```
+
+``` ts
+// classA-test.ts
+import { A } from '../src/classA';
+
+let a = new A();
+test('func1', () => {
+  const spyFunc2 = jest.spyOn(A.prototype as any, 'func2');
+  a.func1();
+  expect(spyFunc2).toHaveBeenCalled();
+});
+```

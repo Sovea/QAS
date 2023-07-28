@@ -28,22 +28,27 @@ function getSidebarConfig(lang: "zh" | "en") {
   return {
     "/": [
       {
-        text: getText("快速上手", "Quick Start"),
-        link: getLink("/guide/getting-started"),
+        text: getText("介绍", "Introduction"),
+        link: getLink("/introduction"),
+      },
+      {
+        text: getText("Web Dev", "Web Dev"),
         items: [
           {
-            text: getText("安装", "Install"),
-            link: getLink("/guide/install"),
+            text: getText("开发效率", "Dev Efficiency"),
+            items: [
+              {
+                text: getText("测试", "Test"),
+                items: [
+                  {
+                    text: getText("Jest 单元测试", "Jest Unit Test"),
+                    link: getLink("/web/efficiency/test/jest-tips"),
+                  },
+                ],
+              },
+            ],
           },
         ],
-      },
-      {
-        text: getText("基础", "Basic"),
-        link: getLink("/guide/basic"),
-      },
-      {
-        text: getText("进阶", "Advanced"),
-        link: getLink("/guide/advanced"),
       },
     ],
   };
